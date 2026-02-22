@@ -112,6 +112,15 @@ button:disabled {
   font-size: 0.85rem;
 }
 
+a.slot {
+  display: block;
+  text-decoration: none;
+}
+
+a.slot:hover {
+  filter: brightness(0.95);
+}
+
 .slot.free {
   background: #dcfce7;
   border-color: #86efac;
@@ -134,6 +143,37 @@ button:disabled {
   display: flex;
   gap: 0.75rem;
   flex-wrap: wrap;
+  align-items: flex-start;
+}
+
+.weekday-filter {
+  display: flex;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+}
+
+.weekday-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  padding: 0.3rem 0.55rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.45rem;
+  cursor: pointer;
+  font-size: 0.85rem;
+  background: #ffffff;
+  user-select: none;
+}
+
+.weekday-btn input {
+  display: none;
+}
+
+.weekday-btn.active {
+  background: #dbeafe;
+  border-color: #93c5fd;
+  color: #1e40af;
+  font-weight: 600;
 }
 
 .field {

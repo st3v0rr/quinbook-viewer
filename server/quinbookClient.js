@@ -1,14 +1,35 @@
-const QUINBOOK_CONFIG = {
-  iShopConfig: "0396df57e78b6d04b6854dd682e27b3c",
-  clientId: "699b2ffc22107ed2300cc0a8",
-  url: "https://finest-escape.de/nuernberg/vecnas-game/",
-  language: "de",
+const ROOMS = {
+  prestige: {
+    label: "Prestige",
+    iShopConfig: "0396df57e78b6d04b6854dd682e27b3c",
+    clientId: "699b2ffc22107ed2300cc0a8",
+    url: "https://finest-escape.de/nuernberg/prestige/",
+    language: "de",
+    bookingUrl: "https://finest-escape.de/nuernberg/prestige/#Buchung",
+  },
+  henker: {
+    label: "Der Henker",
+    iShopConfig: "63154d5661f774fb7d2d11701d466aa2",
+    clientId: "699b2ffc22107ed2300cc0a8",
+    url: "https://finest-escape.de/nuernberg/der-henker/",
+    language: "de",
+    bookingUrl: "https://finest-escape.de/nuernberg/der-henker/#Buchung",
+  },
+  vecnas: {
+    label: "Vecna's Game",
+    iShopConfig: "65586803f1435736f42a541d3a924595",
+    clientId: "699b2ffc22107ed2300cc0a8",
+    url: "https://finest-escape.de/nuernberg/vecnas-game/#Buchung",
+    language: "de",
+    bookingUrl: "https://finest-escape.de/nuernberg/vecnas-game/#Buchung",
+  },
 };
 
 class QuinbookClient {
   constructor() {
-    this._token = null;
-    this._tokenExp = 0;
+    this._tokens = {};
+    this._tokenExps = {};
+    this._tokenPromises = {};
   }
 
   _parseJwtExp(token) {
@@ -21,42 +42,57 @@ class QuinbookClient {
     }
   }
 
-  _isTokenValid() {
-    if (!this._token) return false;
+  _isTokenValid(roomKey) {
+    if (!this._tokens[roomKey]) return false;
     const nowSec = Math.floor(Date.now() / 1000);
-    return this._tokenExp - 300 > nowSec; // 5min buffer
+    return this._tokenExps[roomKey] - 300 > nowSec;
   }
 
-  async getToken() {
-    if (this._isTokenValid()) return this._token;
+  async getToken(roomKey) {
+    if (this._isTokenValid(roomKey)) return this._tokens[roomKey];
+    if (this._tokenPromises[roomKey]) return this._tokenPromises[roomKey];
 
-    const res = await fetch("https://api.quinbook.com/v2/shop/init", {
+    const config = ROOMS[roomKey];
+    console.log(`[quinbook] fetching new token for ${roomKey}`);
+
+    this._tokenPromises[roomKey] = fetch("https://api.quinbook.com/v2/shop/init", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         Origin: "https://finest-escape.de",
         Referer: "https://finest-escape.de/",
       },
-      body: JSON.stringify(QUINBOOK_CONFIG),
-    });
+      body: JSON.stringify({
+        iShopConfig: config.iShopConfig,
+        clientId: config.clientId,
+        url: config.url,
+        language: config.language,
+      }),
+    })
+      .then((res) => {
+        if (!res.ok) throw new Error(`Quinbook init failed: ${res.status} ${res.statusText}`);
+        return res.json();
+      })
+      .then((data) => {
+        const token = data.authToken ?? data.token ?? data.accessToken ?? data.access_token;
+        if (!token) throw new Error("No token in Quinbook init response");
+        this._tokens[roomKey] = token;
+        this._tokenExps[roomKey] = this._parseJwtExp(token);
+        const expiresAt = new Date(this._tokenExps[roomKey] * 1000).toISOString();
+        console.log(`[quinbook] token for ${roomKey} acquired, expires at ${expiresAt}`);
+        return token;
+      })
+      .finally(() => {
+        this._tokenPromises[roomKey] = null;
+      });
 
-    if (!res.ok) {
-      throw new Error(`Quinbook init failed: ${res.status} ${res.statusText}`);
-    }
-
-    const data = await res.json();
-    this._token = data.token ?? data.accessToken ?? data.access_token;
-
-    if (!this._token) {
-      throw new Error("No token in Quinbook init response");
-    }
-
-    this._tokenExp = this._parseJwtExp(this._token);
-    return this._token;
+    return this._tokenPromises[roomKey];
   }
 
-  async getSlots(date) {
-    const token = await this.getToken();
+  async getSlots(roomKey, date) {
+    const token = await this.getToken(roomKey);
+    console.log(`[quinbook] fetching slots for ${roomKey} ${date}`);
+    const start = Date.now();
     const res = await fetch(
       `https://api.quinbook.com/v2/shop/slots/${date}?tzoffset=-60`,
       {
@@ -72,8 +108,10 @@ class QuinbookClient {
       throw new Error(`Quinbook slots failed for ${date}: ${res.status} ${res.statusText}`);
     }
 
+    const ms = Date.now() - start;
+    console.log(`[quinbook] slots for ${roomKey} ${date} received in ${ms}ms`);
     return res.json();
   }
 }
 
-module.exports = new QuinbookClient();
+module.exports = { client: new QuinbookClient(), ROOMS };

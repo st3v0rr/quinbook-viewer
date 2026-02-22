@@ -1,21 +1,25 @@
+function fmtDate(dateStr) {
+  return dateStr.slice(8, 10) + "." + dateStr.slice(5, 7) + "." + dateStr.slice(0, 4);
+}
+
 function normalizeSlots(raw) {
   if (Array.isArray(raw)) return raw;
-  if (Array.isArray(raw?.slots)) return raw.slots;
   return [];
 }
 
 function slotTime(slot) {
-  return slot.time || slot.start || slot.from || "--:--";
+  const s = slot.start || slot.time || slot.from || "";
+  // ISO datetime "2026-03-12T15:00:00" → "15:00"
+  return s.includes("T") ? s.slice(11, 16) : (s.slice(0, 5) || "--:--");
 }
 
 function slotStatus(slot) {
-  if (slot.occupied === true) return "occupied";
-  if (slot.occupied === false || slot.available === true) return "free";
-  if (slot.available === false) return "occupied";
+  if (slot.available === true || slot.display === "available") return "free";
+  if (slot.available === false || slot.display === "occupied") return "occupied";
   return "unknown";
 }
 
-export default function SlotGrid({ days }) {
+export default function SlotGrid({ days, bookingUrl }) {
   return (
     <div className="week-grid">
       {days.map((day) => {
@@ -24,7 +28,7 @@ export default function SlotGrid({ days }) {
           <section key={day.date} className="day-col">
             <div className="day-head">
               <div>{day.label}</div>
-              <div className="meta">{day.date}</div>
+              <div className="meta">{fmtDate(day.date)}</div>
             </div>
 
             <div className="slot-list">
@@ -33,10 +37,25 @@ export default function SlotGrid({ days }) {
               ) : (
                 slots.map((slot, idx) => {
                   const status = slotStatus(slot);
-                  return (
-                    <div key={`${day.date}-${idx}`} className={`slot ${status}`}>
+                  const inner = (
+                    <>
                       <strong>{slotTime(slot)}</strong>
                       <span> {status === "free" ? "frei" : status === "occupied" ? "belegt" : "?"}</span>
+                    </>
+                  );
+                  return status === "free" ? (
+                    <a
+                      key={`${day.date}-${idx}`}
+                      className="slot free"
+                      href={bookingUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      {inner}
+                    </a>
+                  ) : (
+                    <div key={`${day.date}-${idx}`} className={`slot ${status}`}>
+                      {inner}
                     </div>
                   );
                 })

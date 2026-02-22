@@ -8,7 +8,7 @@ function addDays(dateStr, days) {
   return date.toISOString().slice(0, 10);
 }
 
-export default function WeekView({ weekStart, data }) {
+export default function WeekView({ weekStart, data, bookingUrl }) {
   const days = DAY_LABELS.map((label, idx) => {
     const date = addDays(weekStart, idx);
     return {
@@ -18,5 +18,5 @@ export default function WeekView({ weekStart, data }) {
     };
   });
 
-  return <SlotGrid days={days} />;
+  return <SlotGrid days={days} bookingUrl={bookingUrl} />;
 }
