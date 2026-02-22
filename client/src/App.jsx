@@ -67,33 +67,84 @@ export default function App() {
 
   const weekEnd = useMemo(() => addDays(weekStart, 6), [weekStart]);
   const currentRoom = rooms.find((r) => r.key === room);
+  const isCurrentWeek = weekStart === toDateStr(mondayOf());
+
+  function switchRoom(key) {
+    setRoom(key);
+    setWeekData({});
+  }
 
   return (
-    <main className="app stack">
-      <section className="card stack">
-        <div className="controls">
-          <h1>Quinbook Slot Viewer</h1>
+    <main className={`app theme-${room}`}>
+      <div className="card stack">
+        {/* Header: brand + room selector */}
+        <div className="app-header">
+          <div className="app-brand">
+            <span className="brand-icon">🔐</span>
+            <h1 className="brand-name">Quinbook Slot Viewer</h1>
+          </div>
           {rooms.length > 0 && (
-            <select value={room} onChange={(e) => { setRoom(e.target.value); setWeekData({}); }}>
+            <div className="room-toggles">
               {rooms.map((r) => (
-                <option key={r.key} value={r.key}>{r.label}</option>
+                <button
+                  key={r.key}
+                  className={`room-btn${room === r.key ? " active" : ""}`}
+                  onClick={() => switchRoom(r.key)}
+                >
+                  {r.label}
+                </button>
               ))}
-            </select>
+            </div>
           )}
         </div>
 
-        <div className="controls">
-          <button onClick={() => setWeekStart(addDays(weekStart, -7))}>Vorherige Woche</button>
-          <strong>{fmtDate(weekStart)} - {fmtDate(weekEnd)}</strong>
-          <button onClick={() => setWeekStart(addDays(weekStart, 7))}>Naechste Woche</button>
-          <button onClick={() => setWeekStart(toDateStr(mondayOf()))}>Aktuelle Woche</button>
+        {/* Week navigation */}
+        <div className="week-nav">
+          <div className="nav-btns">
+            {!isCurrentWeek && (
+              <button
+                className="nav-btn"
+                onClick={() => setWeekStart(addDays(weekStart, -7))}
+                title="Vorherige Woche"
+              >
+                ← Zurück
+              </button>
+            )}
+          </div>
+          <div className="week-nav-center">
+            <span className="week-nav-date">
+              {fmtDate(weekStart)} – {fmtDate(weekEnd)}
+            </span>
+            {!isCurrentWeek && (
+              <button
+                className="today-link"
+                onClick={() => setWeekStart(toDateStr(mondayOf()))}
+              >
+                ↩ Aktuelle Woche
+              </button>
+            )}
+          </div>
+          <div className="nav-btns">
+            <button
+              className="nav-btn"
+              onClick={() => setWeekStart(addDays(weekStart, 7))}
+              title="Nächste Woche"
+            >
+              Weiter →
+            </button>
+          </div>
         </div>
 
-        {loading ? <div className="meta">Lade Slots...</div> : null}
-        {error ? <div className="error">{error}</div> : null}
+        {loading && <div className="loading-bar" />}
+        {error && <div className="error-msg">{error}</div>}
 
-        <WeekView weekStart={weekStart} data={weekData} bookingUrl={currentRoom?.bookingUrl} />
-      </section>
+        <WeekView
+          weekStart={weekStart}
+          data={weekData}
+          bookingUrl={currentRoom?.bookingUrl}
+          loading={loading}
+        />
+      </div>
 
       <NextSlotFinder
         fromDate={weekStart}

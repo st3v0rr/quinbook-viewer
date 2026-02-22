@@ -9,7 +9,6 @@ function normalizeSlots(raw) {
 
 function slotTime(slot) {
   const s = slot.start || slot.time || slot.from || "";
-  // ISO datetime "2026-03-12T15:00:00" → "15:00"
   return s.includes("T") ? s.slice(11, 16) : (s.slice(0, 5) || "--:--");
 }
 
@@ -19,28 +18,52 @@ function slotStatus(slot) {
   return "unknown";
 }
 
-export default function SlotGrid({ days, bookingUrl }) {
+function slotIcon(status) {
+  if (status === "free") return "🔓";
+  if (status === "occupied") return "🔒";
+  return "·";
+}
+
+function slotStatusLabel(status) {
+  if (status === "free") return "frei";
+  if (status === "occupied") return "belegt";
+  return "?";
+}
+
+const SKELETON_ROWS = [null, null, null];
+
+export default function SlotGrid({ days, bookingUrl, loading }) {
   return (
     <div className="week-grid">
       {days.map((day) => {
         const slots = normalizeSlots(day.slots);
+        const showSkeleton = loading && slots.length === 0;
+
         return (
-          <section key={day.date} className="day-col">
+          <section key={day.date} className={`day-col${day.isToday ? " today" : ""}`}>
             <div className="day-head">
-              <div>{day.label}</div>
-              <div className="meta">{fmtDate(day.date)}</div>
+              <div className="day-label">{day.label}</div>
+              <div className="day-date">{fmtDate(day.date)}</div>
             </div>
 
             <div className="slot-list">
-              {slots.length === 0 ? (
-                <div className="meta">Keine Slots</div>
+              {showSkeleton ? (
+                SKELETON_ROWS.map((_, idx) => (
+                  <div key={idx} className="slot skeleton">
+                    <span className="slot-icon">·</span>
+                    <time>00:00</time>
+                  </div>
+                ))
+              ) : slots.length === 0 ? (
+                <div className="no-slots">Keine Slots</div>
               ) : (
                 slots.map((slot, idx) => {
                   const status = slotStatus(slot);
                   const inner = (
                     <>
-                      <strong>{slotTime(slot)}</strong>
-                      <span> {status === "free" ? "frei" : status === "occupied" ? "belegt" : "?"}</span>
+                      <span className="slot-icon">{slotIcon(status)}</span>
+                      <time>{slotTime(slot)}</time>
+                      <span className="slot-label">{slotStatusLabel(status)}</span>
                     </>
                   );
                   return status === "free" ? (

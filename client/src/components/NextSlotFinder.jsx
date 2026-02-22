@@ -18,6 +18,8 @@ export default function NextSlotFinder({ fromDate, room, bookingUrl, onFound }) 
   const [error, setError] = useState("");
   const [result, setResult] = useState(null);
 
+  const timeInvalid = timeFrom && timeTo && timeFrom > timeTo;
+
   async function findNext() {
     setLoading(true);
     setError("");
@@ -30,9 +32,7 @@ export default function NextSlotFinder({ fromDate, room, bookingUrl, onFound }) 
       if (days.length > 0) params.set("days", days.join(","));
 
       const res = await fetch(`/api/slots/next?${params.toString()}`);
-      if (!res.ok) {
-        throw new Error(`Request failed with ${res.status}`);
-      }
+      if (!res.ok) throw new Error(`Request failed with ${res.status}`);
 
       const data = await res.json();
       setResult(data);
@@ -45,48 +45,80 @@ export default function NextSlotFinder({ fromDate, room, bookingUrl, onFound }) 
     }
   }
 
+  function reset() {
+    setTimeFrom("");
+    setTimeTo("");
+    setDays([]);
+    setResult(null);
+    setError("");
+  }
+
+  const canReset = !loading && (timeFrom || timeTo || days.length > 0);
+
   return (
-    <section className="card stack">
-      <h2>Naechsten freien Slot finden</h2>
-      <TimeFilter
-        timeFrom={timeFrom}
-        timeTo={timeTo}
-        days={days}
-        onChange={({ timeFrom: from, timeTo: to, days: d }) => {
-          setTimeFrom(from);
-          setTimeTo(to);
-          setDays(d);
-        }}
-      />
-      <div className="controls">
-        <button onClick={findNext} disabled={loading || (timeFrom && timeTo && timeFrom > timeTo)}>
-          {loading ? "Suche..." : "Suchen"}
-        </button>
-        <button
-          onClick={() => { setTimeFrom(""); setTimeTo(""); setDays([]); setResult(null); setError(""); }}
-          disabled={loading || (!timeFrom && !timeTo && days.length === 0)}
-        >
-          Zurücksetzen
-        </button>
-        {timeFrom && timeTo && timeFrom > timeTo ? (
-          <span className="error">Von darf nicht spaeter als Bis sein.</span>
-        ) : null}
+    <details className="next-finder" open>
+      <summary>
+        <span className="finder-icon">🔍</span>
+        <span className="finder-title">Nächsten freien Slot finden</span>
+        <span className="finder-chevron">▾</span>
+      </summary>
+
+      <div className="finder-body">
+        <TimeFilter
+          timeFrom={timeFrom}
+          timeTo={timeTo}
+          days={days}
+          onChange={({ timeFrom: from, timeTo: to, days: d }) => {
+            setTimeFrom(from);
+            setTimeTo(to);
+            setDays(d);
+          }}
+        />
+
+        <div className="action-row">
+          <button
+            className="btn btn-primary"
+            onClick={findNext}
+            disabled={loading || timeInvalid}
+          >
+            {loading ? "Suche läuft…" : "Suchen"}
+          </button>
+          <button className="btn" onClick={reset} disabled={!canReset}>
+            Zurücksetzen
+          </button>
+          {timeInvalid && (
+            <span className="validation-msg">„Von" darf nicht nach „Bis" liegen.</span>
+          )}
+        </div>
+
+        {error && <div className="error-msg">{error}</div>}
+
+        {result && (
+          result.date && result.slot ? (
+            <div className="result-box success">
+              <span>🔓</span>
+              <span>
+                Nächster freier Slot:{" "}
+                <span className="result-date">
+                  {fmtDate(result.date)} · {slotTime(result.slot)}
+                </span>
+              </span>
+              <a
+                className="result-book"
+                href={bookingUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                → Jetzt buchen
+              </a>
+            </div>
+          ) : (
+            <div className="result-box empty">
+              🔒 Kein passender freier Slot gefunden.
+            </div>
+          )
+        )}
       </div>
-
-      {error ? <div className="error">{error}</div> : null}
-
-      {result ? (
-        result.date && result.slot ? (
-          <div className="success">
-            Naechster Slot:{" "}
-            <a href={bookingUrl} target="_blank" rel="noopener noreferrer">
-              {fmtDate(result.date)} um {slotTime(result.slot)}
-            </a>
-          </div>
-        ) : (
-          <div className="meta">Kein passender freier Slot gefunden.</div>
-        )
-      ) : null}
-    </section>
+    </details>
   );
 }
