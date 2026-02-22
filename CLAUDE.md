@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Quinbook Slot Viewer is a tool for viewing booking slot availability for an escape room ("Vecna's Game" at finest-escape.de in Nuremberg). It proxies the Quinbook booking API to display a week calendar view and find the next available slot.
+Quinbook Slot Viewer is a tool for viewing booking slot availability for escape rooms at finest-escape.de (Nürnberg). It proxies the Quinbook booking API to display a week calendar view and find the next available slot. Three rooms are supported: **Prestige**, **Der Henker**, and **Vecna's Game**.
 
 ## Architecture
 
@@ -20,14 +20,20 @@ In development, Vite dev server proxies `/api` to `localhost:3000`. In productio
 
 ### Key files
 
-- `server/quinbookClient.js` — Singleton that authenticates with Quinbook (`POST /v2/shop/init`) and fetches slots. Caches the JWT with a 5-minute expiry buffer.
-- `server/routes/slots.js` — Two routes: `GET /api/slots/week/:date` (parallel fetches for 7 days) and `GET /api/slots/next` (sequential search up to 60 days ahead with optional time-range filter).
-- `client/src/App.jsx` — Root component; owns week-navigation state and fetches week data.
-- `client/src/components/SlotGrid.jsx` — Renders the slot grid; normalizes the Quinbook API response (which can return either an array or `{ slots: [] }`).
+- `server/quinbookClient.js` — Exports `{ client, ROOMS }`. `ROOMS` maps room keys (`prestige`, `henker`, `vecnas`) to their Quinbook config. `QuinbookClient` authenticates per-room via `POST /v2/shop/init` and caches JWTs with a 5-minute expiry buffer.
+- `server/routes/slots.js` — Three routes:
+  - `GET /api/slots/rooms` — returns available rooms (key, label, bookingUrl)
+  - `GET /api/slots/week/:date?room=prestige` — parallel fetches for 7 days
+  - `GET /api/slots/next?room=prestige&from=YYYY-MM-DD&timeFrom=HH:MM&timeTo=HH:MM&days=0,6` — sequential search up to 180 days ahead; `days` is comma-separated JS weekday numbers (0=Sun, 6=Sat)
+- `client/src/App.jsx` — Root component; owns week-navigation and room-selection state; fetches week data and room list.
+- `client/src/components/WeekView.jsx` — Maps 7 days from `weekStart` to `{label, date, slots}` and renders via `SlotGrid`.
+- `client/src/components/SlotGrid.jsx` — Renders the slot grid; each column is a day, each row a slot.
+- `client/src/components/NextSlotFinder.jsx` — "Find next free slot" UI; delegates filtering to `TimeFilter`.
+- `client/src/components/TimeFilter.jsx` — Time-range (HH:MM from/to) and weekday checkbox filter inputs.
 
-### Quinbook API quirks
+### Quinbook API response structure
 
-Slot objects use inconsistent field names across API versions — the code defensively checks `slot.time || slot.start || slot.from` for the time and `slot.occupied` / `slot.available` for status.
+Slot data comes back as `{ events: [{ slots: [...] }] }`. The `extractSlots` helper does `dayData?.events?.flatMap(e => e.slots ?? [])`. Each slot has a `start` field (ISO datetime or `HH:MM`), and `available: true/false`.
 
 ## Development
 

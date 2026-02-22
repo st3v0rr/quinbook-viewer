@@ -1,12 +1,15 @@
 # Quinbook Slot Viewer
 
-Zeigt die Buchungsslots für **Vecna's Game** (finest-escape.de, Nürnberg) als Wochenkalender an und findet den nächsten freien Slot – optional mit Zeitfenster-Filter.
+Zeigt die Buchungsslots für die Escape Rooms von **finest-escape.de (Nürnberg)** als Wochenkalender an und findet den nächsten freien Slot – mit Zeitfenster- und Wochentagsfilter.
+
+Unterstützte Räume: **Prestige**, **Der Henker**, **Vecna's Game**
 
 ## Features
 
 - Wochenansicht (Mo–So) mit freien und belegten Slots
+- Raumauswahl per Dropdown
 - Navigation zwischen Wochen
-- Suche nach dem nächsten freien Slot ab einem Startdatum, mit optionalem Von/Bis-Zeitfilter
+- Suche nach dem nächsten freien Slot ab heute, mit optionalem Von/Bis-Zeitfilter und Wochentags-Auswahl
 
 ## Voraussetzungen
 
@@ -55,5 +58,6 @@ Der Container läuft auf Port `3000`.
 
 | Route | Beschreibung |
 |---|---|
-| `GET /api/slots/week/:date` | Slots für 7 Tage ab `date` (YYYY-MM-DD) |
-| `GET /api/slots/next?from=&timeFrom=&timeTo=` | Nächster freier Slot ab `from`, optional gefiltert nach Uhrzeit (HH:MM) |
+| `GET /api/slots/rooms` | Liste der verfügbaren Räume (key, label, bookingUrl) |
+| `GET /api/slots/week/:date?room=prestige` | Slots für 7 Tage ab `date` (YYYY-MM-DD) |
+| `GET /api/slots/next?room=prestige&from=YYYY-MM-DD&timeFrom=HH:MM&timeTo=HH:MM&days=1,2` | Nächster freier Slot ab `from` (default: heute), optional gefiltert nach Uhrzeit und Wochentagen (kommagetrennte JS-Wochentagnummern, 0=So, 6=Sa); sucht bis zu 180 Tage voraus |
