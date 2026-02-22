@@ -1,0 +1,160 @@
+:root {
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  color: #111827;
+  background: #f3f4f6;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+}
+
+.app {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 1.5rem;
+}
+
+h1,
+h2,
+h3,
+p {
+  margin: 0;
+}
+
+.controls {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+button {
+  border: 1px solid #d1d5db;
+  border-radius: 0.5rem;
+  background: #ffffff;
+  color: #111827;
+  padding: 0.5rem 0.85rem;
+  cursor: pointer;
+}
+
+button:hover {
+  background: #f9fafb;
+}
+
+button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.card {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.75rem;
+  padding: 1rem;
+}
+
+.stack {
+  display: grid;
+  gap: 1rem;
+}
+
+.meta {
+  color: #4b5563;
+  font-size: 0.9rem;
+}
+
+.error {
+  color: #b91c1c;
+  font-weight: 600;
+}
+
+.success {
+  color: #065f46;
+  font-weight: 600;
+}
+
+.week-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 0.6rem;
+  overflow-x: auto;
+}
+
+.day-col {
+  min-width: 130px;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.65rem;
+  padding: 0.5rem;
+  background: #fafafa;
+}
+
+.day-head {
+  font-size: 0.85rem;
+  color: #374151;
+  margin-bottom: 0.45rem;
+  border-bottom: 1px solid #e5e7eb;
+  padding-bottom: 0.3rem;
+}
+
+.slot-list {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.slot {
+  border: 1px solid transparent;
+  border-radius: 0.45rem;
+  padding: 0.35rem 0.45rem;
+  font-size: 0.85rem;
+}
+
+.slot.free {
+  background: #dcfce7;
+  border-color: #86efac;
+  color: #14532d;
+}
+
+.slot.occupied {
+  background: #fee2e2;
+  border-color: #fca5a5;
+  color: #7f1d1d;
+}
+
+.slot.unknown {
+  background: #f3f4f6;
+  border-color: #d1d5db;
+  color: #374151;
+}
+
+.filters {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.field {
+  display: grid;
+  gap: 0.25rem;
+  min-width: 130px;
+}
+
+select {
+  border: 1px solid #d1d5db;
+  border-radius: 0.5rem;
+  padding: 0.45rem;
+  background: #ffffff;
+}
+
+@media (max-width: 900px) {
+  .app {
+    padding: 1rem;
+  }
+
+  .day-col {
+    min-width: 145px;
+  }
+}
